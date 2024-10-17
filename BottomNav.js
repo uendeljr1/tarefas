@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Home, Plus, User, List } from 'lucide-react-native';
+import { Home, Plus, User } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 
 export default function BottomNav() {
@@ -8,6 +8,7 @@ export default function BottomNav() {
 
   return (
     <View style={styles.bottomNav}>
+      {/* Botão Início */}
       <TouchableOpacity 
         style={styles.navItem} 
         onPress={() => navigation.navigate('Home')} 
@@ -17,6 +18,7 @@ export default function BottomNav() {
         <Text style={styles.navText}>Início</Text>
       </TouchableOpacity>
 
+      {/* Botão Adicionar */}
       <TouchableOpacity 
         style={styles.navItem}
         onPress={() => navigation.navigate('AddTask')}
@@ -26,15 +28,7 @@ export default function BottomNav() {
         <Text style={styles.navText}>Adicionar</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.navItem}
-        onPress={() => navigation.navigate('AllTasks')}
-        accessibilityRole="button"
-      >
-        <List size={24} color="#8E8E93" />
-        <Text style={styles.navText}>Todas</Text>
-      </TouchableOpacity>
-
+      {/* Botão Perfil */}
       <TouchableOpacity 
         style={styles.navItem}
         onPress={() => navigation.navigate('Profile')}

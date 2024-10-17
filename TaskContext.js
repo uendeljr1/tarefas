@@ -1,62 +1,28 @@
-// TaskContext.js
-import React, { createContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useState } from 'react';
 
 export const TaskContext = createContext();
 
 export const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
+  const [lists, setLists] = useState([]); // Novo estado para listas personalizadas
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
-  const loadTasks = async () => {
-    try {
-      const storedTasks = await AsyncStorage.getItem('tasks');
-      if (storedTasks !== null) {
-        setTasks(JSON.parse(storedTasks));
-      }
-    } catch (error) {
-      console.error('Erro ao carregar tarefas:', error);
-    }
+  // Função para adicionar nova lista
+  const addList = (listName) => {
+    setLists([...lists, listName]);
   };
 
-  const addTask = async (newTask) => {
-    try {
-      const updatedTasks = [...tasks, newTask];
-      setTasks(updatedTasks);
-      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-    } catch (error) {
-      console.error('Erro ao adicionar tarefa:', error);
-      throw error;
-    }
+  // Função para excluir lista
+  const deleteList = (listName) => {
+    setLists(lists.filter(list => list !== listName));
   };
 
-  const completeTask = async (taskId) => {
-    try {
-      const updatedTasks = tasks.map(task => 
-        task.id === taskId ? { ...task, completed: true } : task
-      );
-      setTasks(updatedTasks);
-      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-    } catch (error) {
-      console.error('Erro ao concluir tarefa:', error);
-    }
-  };
-
-  const deleteTask = async (taskId) => {
-    try {
-      const updatedTasks = tasks.filter(task => task.id !== taskId);
-      setTasks(updatedTasks);
-      await AsyncStorage.setItem('tasks', JSON.stringify(updatedTasks));
-    } catch (error) {
-      console.error('Erro ao excluir tarefa:', error);
-    }
+  // Função para adicionar nova tarefa
+  const addTask = (newTask) => {
+    setTasks([...tasks, newTask]);
   };
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, loadTasks, completeTask, deleteTask }}>
+    <TaskContext.Provider value={{ tasks, addTask, lists, addList, deleteList }}>
       {children}
     </TaskContext.Provider>
   );

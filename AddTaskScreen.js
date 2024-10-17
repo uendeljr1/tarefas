@@ -1,44 +1,45 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ScrollView } from 'react-native';
-import { ArrowLeft, MoreHorizontal, ChevronDown, ChevronUp } from 'lucide-react-native';
+import React, { useState, useContext, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, ScrollView, Modal } from 'react-native';
+import { ArrowLeft, MoreHorizontal, ChevronDown } from 'lucide-react-native';
 import { Calendar } from 'react-native-calendars';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { TaskContext } from './TaskContext';
 import BottomNav from './BottomNav'; // Importa a barra inferior
 
 export default function AddTaskScreen({ navigation, route }) {
-  const { addTask, editTask } = useContext(TaskContext);
+  const { addTask, lists } = useContext(TaskContext); // Usa o contexto para as listas
   const task = route.params?.task || null; // Tarefa a ser editada, se existir
   const [taskName, setTaskName] = useState(task ? task.name : '');
   const [selectedDate, setSelectedDate] = useState(task ? task.date : '');
   const [time, setTime] = useState(new Date());
   const [showTimePicker, setShowTimePicker] = useState(false);
-  
-  // Novo estado para a lista
-  const [selectedList, setSelectedList] = useState(task ? task.list : ''); 
 
-  // Definindo listas disponíveis
-  const availableLists = ['Trabalho', 'Pessoal', 'Remédios']; 
+  // Estado para controlar a lista selecionada e o modal
+  const [selectedList, setSelectedList] = useState(task ? task.list : '');
+  const [showListModal, setShowListModal] = useState(false);
 
-  // Controla a visibilidade das listas (dropdown)
-  const [showListDropdown, setShowListDropdown] = useState(false);
+  // Estado para controlar se o formulário está pronto
+  const [isFormReady, setIsFormReady] = useState(false);
 
-  // Função para selecionar a data
-  const onDateSelect = (day) => {
-    setSelectedDate(day.dateString); // Define a data selecionada
-  };
-
-  // Função para alterar o horário
+  const onDateSelect = (day) => setSelectedDate(day.dateString);
   const onTimeChange = (event, selectedTime) => {
     const currentTime = selectedTime || time;
-    setShowTimePicker(false); // Oculta o seletor de tempo
-    setTime(currentTime); // Define o tempo selecionado
+    setShowTimePicker(false);
+    setTime(currentTime);
   };
 
-  // Função para criar ou atualizar a tarefa
+  useEffect(() => {
+    // Verifica se todos os campos obrigatórios estão preenchidos
+    if (taskName && selectedDate && selectedList) {
+      setIsFormReady(true); // Ativa o botão se tudo estiver preenchido
+    } else {
+      setIsFormReady(false); // Desativa o botão se algo estiver faltando
+    }
+  }, [taskName, selectedDate, selectedList]);
+
   const createOrUpdateTask = async () => {
     if (!taskName || !selectedDate || !selectedList) {
-      Alert.alert('Erro', 'Por favor, preencha o nome da tarefa, selecione uma data e uma lista.');
+      Alert.alert('Erro', 'Por favor, preencha todos os campos.');
       return;
     }
 
@@ -47,32 +48,17 @@ export default function AddTaskScreen({ navigation, route }) {
       name: taskName,
       date: selectedDate,
       time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      list: selectedList, // Adicionando a lista à tarefa
+      list: selectedList, // Lista selecionada
     };
 
-    try {
-      if (task) {
-        // Editar tarefa existente
-        await editTask(newTask.id, newTask);
-        Alert.alert('Sucesso', 'Tarefa editada com sucesso!');
-      } else {
-        // Criar nova tarefa
-        await addTask(newTask);
-        Alert.alert('Sucesso', 'Tarefa criada com sucesso!');
-      }
-      navigation.goBack(); // Volta para a tela anterior
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível salvar a tarefa. Tente novamente.');
-    }
+    await addTask(newTask);
+    navigation.goBack();
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => navigation.goBack()} // Navega de volta para a tela anterior
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <ArrowLeft size={24} color="#007AFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{task ? 'Editar Tarefa' : 'Nova Tarefa'}</Text>
@@ -80,7 +66,7 @@ export default function AddTaskScreen({ navigation, route }) {
           <MoreHorizontal size={24} color="#007AFF" />
         </TouchableOpacity>
       </View>
-      
+
       <ScrollView style={styles.scrollView}>
         <TextInput
           style={styles.input}
@@ -91,13 +77,8 @@ export default function AddTaskScreen({ navigation, route }) {
 
         <Calendar
           onDayPress={onDateSelect}
-          markedDates={{
-            [selectedDate]: { selected: true, selectedColor: '#007bff' },
-          }}
-          theme={{
-            arrowColor: '#007bff',
-            selectedDayBackgroundColor: '#007bff',
-          }}
+          markedDates={{ [selectedDate]: { selected: true, selectedColor: '#007bff' } }}
+          theme={{ arrowColor: '#007bff', selectedDayBackgroundColor: '#007bff' }}
         />
 
         <View style={styles.timePickerContainer}>
@@ -116,51 +97,50 @@ export default function AddTaskScreen({ navigation, route }) {
           />
         )}
 
-        {/* Seletor de Lista com dropdown */}
-        <View style={styles.listPickerContainer}>
-          <TouchableOpacity 
-            style={styles.dropdownHeader} 
-            onPress={() => setShowListDropdown(!showListDropdown)}
-          >
-            <Text style={styles.label}>Escolha a Lista:</Text>
-            {showListDropdown ? (
-              <ChevronUp size={20} color="#007bff" />
-            ) : (
-              <ChevronDown size={20} color="#007bff" />
-            )}
-          </TouchableOpacity>
+        {/* Botão para abrir o modal de seleção da lista */}
+        <TouchableOpacity style={styles.listPickerButton} onPress={() => setShowListModal(true)}>
+          <Text style={styles.label}>{selectedList || 'Escolha a Lista'}</Text>
+          <ChevronDown size={20} color="#007bff" />
+        </TouchableOpacity>
 
-          {/* Mostra as listas somente se o dropdown estiver visível */}
-          {showListDropdown && (
-            <View style={styles.dropdownContent}>
-              {availableLists.map((list, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[
-                    styles.listItem,
-                    selectedList === list && styles.selectedListItem, // Aplica estilo se a lista estiver selecionada
-                  ]}
-                  onPress={() => {
-                    setSelectedList(list);
-                    setShowListDropdown(false); // Fecha o dropdown após selecionar
-                  }}
-                >
-                  <Text style={[styles.listText, selectedList === list && styles.selectedListText]}>
-                    {list}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
-        <TouchableOpacity style={styles.createButton} onPress={createOrUpdateTask}>
+        {/* O botão muda de cor conforme o estado `isFormReady` */}
+        <TouchableOpacity
+          style={[styles.createButton, isFormReady ? styles.createButtonActive : styles.createButtonInactive]} 
+          onPress={createOrUpdateTask}
+          disabled={!isFormReady} // Desativa o botão se não estiver pronto
+        >
           <Text style={styles.buttonText}>+ {task ? 'Salvar Tarefa' : 'Criar Tarefa'}</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Barra inferior de navegação */}
       <BottomNav />
+
+      {/* Modal para seleção da lista */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showListModal}
+        onRequestClose={() => setShowListModal(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            {lists.length === 0 ? (
+              <Text style={styles.noListsText}>Nenhuma lista criada</Text>
+            ) : (
+              lists.map((list, index) => (
+                <TouchableOpacity 
+                  key={index} 
+                  style={styles.listItem} 
+                  onPress={() => { 
+                    setSelectedList(list);
+                    setShowListModal(false); // Fecha o modal após selecionar
+                  }}>
+                  <Text style={styles.listItemText}>{list}</Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -212,44 +192,59 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#007bff',
   },
-  listPickerContainer: {
-    marginVertical: 20,
-  },
-  dropdownHeader: {
+  listPickerButton: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
   },
-  dropdownContent: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingVertical: 5,
+  createButton: {
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 30,
+    width: 180,
+    height: 40,
+    alignSelf: 'center', // Alinha o botão ao centro
+  },
+  createButtonActive: {
+    backgroundColor: '#007bff', // Cor ativa (habilitada)
+  },
+  createButtonInactive: {
+    backgroundColor: '#acacac', // Cor desativada (desabilitada)
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fundo semi-transparente
+  },
+  modalView: {
+    width: '70%', // Diminuindo a largura do modal
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    elevation: 5, // Sombra
   },
   listItem: {
     padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
-  selectedListItem: {
-    backgroundColor: '#007bff', // Estilo para item selecionado
+  listItemText: {
+    fontSize: 16,
+    color: '#007bff',
   },
-  listText: {
-    color: '#333',
-  },
-  selectedListText: {
-    color: '#fff', // Texto branco quando o item está selecionado
-  },
-  createButton: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
+  noListsText: {
+    padding: 10,
+    color: '#999',
+    textAlign: 'center',
   },
 });

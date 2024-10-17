@@ -1,15 +1,14 @@
 import React, { useContext } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, ScrollView, Alert } from 'react-native';
-import { ArrowLeft, MoreVertical, ChevronDown } from 'lucide-react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+
 import { TaskContext } from './TaskContext';
 
 export default function DailyTasksScreen({ navigation }) {
   const { tasks, completeTask, deleteTask } = useContext(TaskContext);
 
-  // Filtrar todas as tarefas diárias
-  const dailyTasks = tasks.filter(task => !task.completed); // Exibir todas as tarefas não concluídas
+  const dailyTasks = tasks.filter(task => !task.completed);
 
-  // Função para concluir tarefa
   const handleCompleteTask = (taskId) => {
     Alert.alert(
       'Confirmar',
@@ -22,7 +21,6 @@ export default function DailyTasksScreen({ navigation }) {
     );
   };
 
-  // Função para excluir tarefa
   const handleDeleteTask = (taskId) => {
     Alert.alert(
       'Confirmar',
@@ -35,25 +33,34 @@ export default function DailyTasksScreen({ navigation }) {
     );
   };
 
+  const handleAddTask = () => {
+    Alert.alert('Adicionar Tarefa', 'Aqui você pode adicionar uma nova tarefa!');
+  };
+
+  const renderIcon = (name, size, color) => (
+    <Text>
+      <Icon name={name} size={size} color={color} />
+    </Text>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Cabeçalho com título */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <ArrowLeft size={24} color="#007AFF" />
+          {renderIcon("arrow-back", 24, "#007AFF")}
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Tarefas Diárias</Text>
         <View style={styles.headerRight} />
       </View>
 
-      {/* Seletor de categoria */}
-      <TouchableOpacity style={styles.categorySelector}>
-        <Text style={styles.categoryText}>Tarefas Diárias</Text>
-        <ChevronDown size={20} color="#000" />
+      <TouchableOpacity style={styles.addTaskButton} onPress={handleAddTask}>
+        <View style={styles.addTaskContent}>
+          {renderIcon("add-circle", 24, "#007AFF")}
+          <Text style={styles.addTaskText}>Adicionar Tarefa</Text>
+        </View>
       </TouchableOpacity>
 
       <ScrollView style={styles.content}>
-        {/* Lista de tarefas ou mensagem "Nenhuma tarefa" */}
         {dailyTasks.length > 0 ? (
           dailyTasks.map(task => (
             <View key={task.id} style={styles.taskItem}>
@@ -63,7 +70,7 @@ export default function DailyTasksScreen({ navigation }) {
                 <Text style={styles.taskTime}>{task.time}</Text>
               </View>
               <TouchableOpacity onPress={() => handleDeleteTask(task.id)}>
-                <MoreVertical size={20} color="#8E8E93" />
+                {renderIcon("ellipsis-vertical", 20, "#8E8E93")}
               </TouchableOpacity>
             </View>
           ))
@@ -94,16 +101,20 @@ const styles = StyleSheet.create({
   headerRight: {
     width: 24,
   },
-  categorySelector: {
+  addTaskButton: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 8,
+  },
+  addTaskContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 0,
   },
-  categoryText: {
+  addTaskText: {
     fontSize: 16,
     fontWeight: '500',
-    marginRight: 8,
+    marginLeft: 8,
+    color: '#007AFF',
   },
   content: {
     flex: 1,
